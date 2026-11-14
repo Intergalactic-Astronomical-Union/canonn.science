@@ -133,7 +133,9 @@
       "height",
       "preload",
       "loop",
-      "muted"
+      "muted",
+      "autoplay",
+      "playsinline"
     ],
     "audio": [
       "src",
