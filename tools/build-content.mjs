@@ -121,6 +121,10 @@ for (const c of taxonomy.categories) {
 // Synthetic "Contributors" category: one sub-category per author, grouping articles by
 // `article.author` (not a real taxonomy category - see issue #177). Not recorded anywhere
 // in article.json; built purely from the per-article records already loaded above.
+// Flagged `contributors: true` so the frontend can show it as a home-page topic tile
+// without also turning it into a tag pill / breadcrumb entry on every article page -
+// the author's name is linked directly from the byline instead (see `authorLink` below).
+const authorLink = new Map(); // author name -> routerLink commands for their sub-category page
 {
   const byAuthor = new Map();
   for (const rec of built.values()) {
@@ -133,6 +137,7 @@ for (const c of taxonomy.categories) {
     name: 'Contributors',
     slug: slugify('Contributors', catSlugs),
     description: 'Articles grouped by the Commander or author who wrote them.',
+    contributors: true,
     subs: authorNames.map((author) => ({
       name: author,
       slug: slugify(author, subSlugs),
@@ -141,7 +146,10 @@ for (const c of taxonomy.categories) {
     articles: [],
   };
   cat.count = cat.subs.reduce((n, s) => n + s.articles.length, 0);
-  if (cat.count) categories.push(cat);
+  if (cat.count) {
+    categories.push(cat);
+    for (const sub of cat.subs) authorLink.set(sub.name, ['/topics', cat.slug, sub.slug]);
+  }
 }
 
 // Thumbnails: handed out greedily so no two tiles share a picture if it can be avoided.
@@ -160,8 +168,13 @@ for (const c of categories) {
 }
 
 // ---------------------------------------------------------------- per-article category info
+// Contributors is excluded here: it should show up as a home-page topic tile, but not as a
+// tag pill or breadcrumb entry on every article page (the author's name is linked instead).
 const topCats = new Map();
-for (const c of categories) for (const s of new Set(allOf(c))) (topCats.get(s) ?? topCats.set(s, []).get(s)).push({ name: c.name, slug: c.slug, pinned: pinnedIn(s, c.name) });
+for (const c of categories) {
+  if (c.contributors) continue;
+  for (const s of new Set(allOf(c))) (topCats.get(s) ?? topCats.set(s, []).get(s)).push({ name: c.name, slug: c.slug, pinned: pinnedIn(s, c.name) });
+}
 
 const manifest = [...built.values()]
   .map((r) => ({ slug: r.slug, section: r.section, title: r.title, date: r.date, updated: r.updated, excerpt: r.excerpt, categories: topCats.get(r.slug) ?? [], banner_image: r.banner_image, source: r.source }))
@@ -246,7 +259,7 @@ write('content/editor.json', {
 });
 for (const r of built.values()) {
   const { placements, text, ...publish } = r;
-  write(`content/articles/${r.slug}.json`, { ...publish, categories: topCats.get(r.slug) ?? [] });
+  write(`content/articles/${r.slug}.json`, { ...publish, categories: topCats.get(r.slug) ?? [], author_link: (r.author && authorLink.get(r.author)) ?? null });
 }
 
 const unsorted = [...built.values()].filter((r) => !topCats.has(r.slug)).length;
