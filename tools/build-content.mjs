@@ -118,6 +118,32 @@ for (const c of taxonomy.categories) {
   if (cat.count) categories.push(cat);
 }
 
+// Synthetic "Contributors" category: one sub-category per author, grouping articles by
+// `article.author` (not a real taxonomy category - see issue #177). Not recorded anywhere
+// in article.json; built purely from the per-article records already loaded above.
+{
+  const byAuthor = new Map();
+  for (const rec of built.values()) {
+    if (!rec.author) continue;
+    (byAuthor.get(rec.author) ?? byAuthor.set(rec.author, []).get(rec.author)).push(rec.slug);
+  }
+  const authorNames = [...byAuthor.keys()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  const subSlugs = new Set();
+  const cat = {
+    name: 'Contributors',
+    slug: slugify('Contributors', catSlugs),
+    description: 'Articles grouped by the Commander or author who wrote them.',
+    subs: authorNames.map((author) => ({
+      name: author,
+      slug: slugify(author, subSlugs),
+      articles: [...byAuthor.get(author)].sort((x, y) => dateKey(y).localeCompare(dateKey(x))),
+    })),
+    articles: [],
+  };
+  cat.count = cat.subs.reduce((n, s) => n + s.articles.length, 0);
+  if (cat.count) categories.push(cat);
+}
+
 // Thumbnails: handed out greedily so no two tiles share a picture if it can be avoided.
 const used = new Map();
 const pick = (slugs) => {
