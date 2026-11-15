@@ -64,7 +64,10 @@ interface Placement {
         </ng-container>
 
         <h1>{{ article.title }}</h1>
-        <p class="author" *ngIf="article.author">By {{ article.author }}</p>
+        <p class="author" *ngIf="article.author">By
+          <a *ngIf="article.author_link; else plainAuthor" [routerLink]="article.author_link">{{ article.author }}</a>
+          <ng-template #plainAuthor>{{ article.author }}</ng-template>
+        </p>
         <p class="meta" *ngIf="article.date">{{ article.date | date: 'longDate' }}</p>
         <p class="share" *ngIf="!reviewMode"><app-share-bluesky [text]="article.title"></app-share-bluesky></p>
 
@@ -430,6 +433,9 @@ export class ArticleDetailComponent {
     map(([slug, nav]) => {
       const places: Placement[] = [];
       for (const cat of nav) {
+        // Contributors is a home-page topic tile only, not a tag pill or breadcrumb entry;
+        // the author's name is linked to their sub-category page from the byline instead.
+        if (cat.contributors) continue;
         const sub = cat.subs.find((s) => s.articles.includes(slug));
         if (sub || cat.articles.includes(slug)) {
           const named = sub && sub.name !== 'Everything else';
