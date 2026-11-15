@@ -5,7 +5,8 @@
   "date": "2023-10-06T03:22:35",
   "modified": null,
   "author": "SovereignWinter",
-  "excerpt": "The Sidewinder MkI is a small size ship manufactured by Faulcon DeLacy. It is the first ship that most newly registers Commanders fly, often as a loaned ship from the Pilots Federation. Its versatility and low price make it a popular entry-level vessel but despite that it is considered one of…",
+  "excerpt": "Aerodynamic analysis of the Faulcon DeLacy Sidewinder MkI.",
+  "banner": "media/SidewinderMkI_Scalar_Pretty_Picture.webp",
   "categories": [
     {
       "category": "Technology",
@@ -16,6 +17,5 @@
   ],
   "format": "html",
   "source": "wayback",
-  "original_link": "https://canonn.science/codex/research-notes/sidewinder-mki-aerodynamics/",
-  "banner": "media/banner.webp"
+  "original_link": "https://canonn.science/codex/research-notes/sidewinder-mki-aerodynamics/"
 }

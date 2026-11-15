@@ -3,8 +3,10 @@
   "slug": "cobra-mkiii-aerodynamics",
   "section": "codex",
   "date": "2024-01-05T22:04:46",
+  "modified": null,
   "author": "SovereignWinter",
-  "excerpt": "The Cobra MkIII is a small ship manufactured by Faulcon DeLacy. It was designed as a true multipurpose ship, being able to hold its own in combat, carry a reasonable sized payload for its size, and light enough with large enough internals to jump far.",
+  "excerpt": "Aerodynamic analysis of the Faulcon DeLacy Cobra MkIII.",
+  "banner": "media/CobraMkIII_Scalar_Pretty_Picture.webp",
   "categories": [
     {
       "category": "Technology",
@@ -15,6 +17,5 @@
   ],
   "format": "html",
   "source": "wayback",
-  "original_link": "https://canonn.science/codex/research-notes/cobra-mkiii-aerodynamics/",
-  "banner": "media/CobraMkIII_Scalar-Pretty-Picture.png"
+  "original_link": "https://canonn.science/codex/research-notes/cobra-mkiii-aerodynamics/"
 }
