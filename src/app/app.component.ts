@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ContentService, RecentItem, articleLink } from './services/content.service';
@@ -97,6 +97,19 @@ import { ContentService, RecentItem, articleLink } from './services/content.serv
           </div>
         </div>
       </footer>
+
+      <button
+        type="button"
+        class="back-to-top"
+        [class.visible]="showTop"
+        [attr.tabindex]="showTop ? null : -1"
+        [attr.aria-hidden]="showTop ? null : 'true'"
+        aria-label="Back to top"
+        title="Back to top"
+        (click)="scrollToTop()"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"></polyline></svg>
+      </button>
 
       <dialog #reportDialog class="report-dialog" aria-labelledby="report-title" (click)="onDialogClick($event)">
         <h2 id="report-title">Report a problem</h2>
@@ -397,6 +410,43 @@ import { ContentService, RecentItem, articleLink } from './services/content.serv
       flex: 1;
     }
 
+    .back-to-top {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 20;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: rgba(20, 26, 34, 0.92);
+      color: var(--accent-light);
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s, visibility 0.2s, background 0.15s;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+    }
+
+    .back-to-top:hover,
+    .back-to-top:focus-visible {
+      background: var(--accent);
+      color: #0b0e13;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .back-to-top { transition: none; }
+    }
+
     .site-footer {
       border-top: 1px solid var(--border);
       padding: 1.5rem 0;
@@ -417,6 +467,9 @@ export class AppComponent {
   pageTitle = '';
   private pageUrl = '';
 
+  /** The floating "back to top" button appears once the reader has scrolled a screen or so. */
+  showTop = false;
+
   readonly reportOptions = [
     { label: 'Something went wrong', template: 'bug--.md', prefix: 'Bug', detail: 'Something went wrong on this page.' },
     { label: 'This article is inaccurate', template: 'correction--.md', prefix: 'Correction', detail: 'This article is inaccurate.\n\nWhat is wrong, and what should it say?\n' },
@@ -424,6 +477,16 @@ export class AppComponent {
     { label: 'Images are missing', template: 'correction--.md', prefix: 'Correction', detail: 'Images are missing or broken in this article.\n\nWhich images?\n' },
     { label: 'An article is missing', template: 'article-.md', prefix: 'Article', detail: 'I think an article is missing from the site.\n\nWhat do you think is missing? Describe the topic, its old title, or anything else that identifies it.\n\nTip: check the Wayback Machine for the old site before reporting \u2014 visit https://web.archive.org/web/*/https://canonn.science/* (or https://web.archive.org/web/*/https://science.canonn.tech/*), search for the topic, and if you find it, paste the archive.org link here so it can be recovered.\n', includePage: false },
   ];
+
+  @HostListener('window:scroll')
+  onScroll(): void {
+    this.showTop = window.scrollY > 400;
+  }
+
+  scrollToTop(): void {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  }
 
   openReport(): void {
     const h1 = document.querySelector('main h1')?.textContent?.trim();
