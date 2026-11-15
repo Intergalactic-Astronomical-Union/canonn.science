@@ -79,10 +79,11 @@ export class TopicComponent {
       if (category.subs.length === 0) {
         return { category, subName: null, tiles: null, articles: toArticles(category.articles) };
       }
-      // A sub-category with a single article isn't worth a page of its own:
-      // show that article directly in the category.
-      const multi = category.subs.filter((s) => s.articles.length > 1);
-      const singles = category.subs.filter((s) => s.articles.length === 1).flatMap((s) => s.articles);
+      // A sub-category with a single article isn't worth a page of its own: show that
+      // article directly in the category. Contributors is the exception - every author
+      // gets their own tile/page, even with just one article.
+      const multi = category.contributors ? category.subs : category.subs.filter((s) => s.articles.length > 1);
+      const singles = category.contributors ? [] : category.subs.filter((s) => s.articles.length === 1).flatMap((s) => s.articles);
       const tiles: Tile[] = multi.map((s) => ({
         name: s.name,
         count: s.count,
