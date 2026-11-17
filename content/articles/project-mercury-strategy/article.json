@@ -8,12 +8,6 @@
   "banner": "media/banner.jpg",
   "categories": [
     {
-      "category": "News and Events",
-      "subs": [
-        "Mysteries & Hunts"
-      ]
-    },
-    {
       "category": "Xenology",
       "subs": [
         "Thargoids"
