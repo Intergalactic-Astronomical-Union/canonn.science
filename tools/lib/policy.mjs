@@ -21,6 +21,16 @@ const URL_ATTRS = ['href', 'src', 'poster', 'srcset', 'action', 'formaction', 'd
 const BIDI = /[‪-‮⁦-⁩]/;
 const ZERO_WIDTH = /[​-‏⁠﻿­]/;
 
+/** Media hosted in a Canonn-controlled bucket (policy.trustedMediaPrefixes): no tracking-risk warning. */
+export function isTrustedMedia(url) {
+  try {
+    const href = new URL(url).href; // normalised, so ".." and encoded tricks cannot escape the prefix
+    return (policy.trustedMediaPrefixes ?? []).some((p) => href.startsWith(p));
+  } catch {
+    return false;
+  }
+}
+
 export function embedHostAllowed(hostname) {
   return policy.embedHosts.some((h) => hostname === h || hostname.endsWith('.' + h));
 }
@@ -75,7 +85,7 @@ export function scanHtml(html, { scripts = false } = {}) {
       } else if (!SCHEMES.has(kind)) {
         once('error', 'dangerous-url-scheme', `<${tag} ${attr}="${u.slice(0, 80)}"> uses ${kind}:`);
       } else if (tag === 'img' || tag === 'source' || tag === 'video' || tag === 'audio') {
-        if (kind !== 'mailto') once('warn', 'external-media', `<${tag} ${attr}="${u.slice(0, 120)}"> loads from another site (tracking risk)`);
+        if (kind !== 'mailto' && !isTrustedMedia(u)) once('warn', 'external-media', `<${tag} ${attr}="${u.slice(0, 120)}"> loads from another site (tracking risk)`);
       }
     }
   };

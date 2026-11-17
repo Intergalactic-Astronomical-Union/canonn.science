@@ -95,6 +95,7 @@
     "h4": ["id"],
     "h5": ["id"],
     "h6": ["id"],
+    "details": ["open"],
     "a": [
       "href",
       "target",
@@ -132,7 +133,9 @@
       "height",
       "preload",
       "loop",
-      "muted"
+      "muted",
+      "autoplay",
+      "playsinline"
     ],
     "audio": [
       "src",
@@ -191,6 +194,8 @@
     "height",
     "max-width",
     "min-width",
+    "max-height",
+    "min-height",
     "margin",
     "margin-top",
     "margin-bottom",
@@ -220,6 +225,9 @@
     "text-transform",
     "letter-spacing",
     "clear"
+  ],
+  "trustedMediaPrefixes": [
+    "https://storage.googleapis.com/canonn_site/"
   ],
   "externalBannerHosts": [
     "i.ytimg.com"

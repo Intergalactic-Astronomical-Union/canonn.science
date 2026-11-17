@@ -41,6 +41,8 @@ export interface Article extends ArticleSummary {
   original_link: string | null;
   /** Slugs of articles the author linked to, shown below the article. */
   linked?: string[];
+  /** routerLink commands to this author's Contributors sub-category page, if they have one. */
+  author_link?: string[] | null;
 }
 
 /** The home > category > sub-category tree, built by tools/build-content.mjs. */
@@ -62,6 +64,8 @@ export interface NavCategory {
   subs: NavSub[];
   /** Articles shown directly in a category that has no sub-categories. */
   articles: string[];
+  /** The synthetic "Contributors" category (one sub per author): shown as a topic tile, but not as a tag pill or breadcrumb on article pages. */
+  contributors?: boolean;
 }
 
 /** One entry of the "recently added / updated" ticker. */

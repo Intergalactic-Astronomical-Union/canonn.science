@@ -1,5 +1,5 @@
 {
-  "title": "The Hitchhiker’s Guide To Science",
+  "title": "The Hitchhiker's Guide To Science",
   "slug": "hitchhikers-guide-to-science",
   "section": "pages",
   "date": null,
@@ -8,10 +8,8 @@
   "banner": null,
   "categories": [
     {
-      "category": "Bureau of Governance & Settlement",
-      "subs": [
-        "Research"
-      ]
+      "category": "Obsolete/Incomplete",
+      "subs": []
     }
   ],
   "format": "html",

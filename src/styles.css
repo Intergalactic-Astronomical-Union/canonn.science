@@ -204,10 +204,32 @@ details cite {
   padding-right: 1.75rem;
 }
 
-code {
+code, pre {
   display: inline-block;
   vertical-align: top;
   padding: 0 0.4rem;
   background: #faf6e1;
   color: #333;
+}
+
+pre {
+  white-space: pre-wrap;
+}
+
+strong {
+  font-weight: bold;
+}
+
+.display-posts-listing .listing-item {
+  clear:both;
+}
+
+.display-posts-listing img {
+  float:left;
+  margin:0 10px 10px 0
+}
+
+.img-round {
+  border-radius: 50%;
+  margin:1rem
 }

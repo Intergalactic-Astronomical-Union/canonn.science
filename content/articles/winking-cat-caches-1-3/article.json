@@ -4,9 +4,16 @@
   "section": "codex",
   "date": "2022-10-21T22:13:17+01:00",
   "modified": null,
+  "author": "SovereignWinter",
   "excerpt": "",
   "banner": "media/WinkingCat.webp",
   "categories": [
+    {
+      "category": "Civilisation",
+      "subs": [
+        "Abandoned Settlements"
+      ]
+    },
     {
       "category": "News and Events",
       "subs": []

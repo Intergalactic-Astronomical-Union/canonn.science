@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ContentService, RecentItem, articleLink } from './services/content.service';
@@ -14,6 +14,9 @@ import { ContentService, RecentItem, articleLink } from './services/content.serv
       </a>
       <a href="https://bsky.app/profile/canonn.science" class="social-icon" target="_blank" rel="noopener" aria-label="Canonn on Bluesky" title="Bluesky">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.05 9.271 7.733 4.308 4.267-4.308 1.172-6.498-2.74-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.79.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/@CanonnMedia" class="social-icon" target="_blank" rel="noopener" aria-label="Canonn on YouTube" title="YouTube">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.112-2.115C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.386.526A2.994 2.994 0 0 0 .502 6.186 31.03 31.03 0 0 0 0 12a31.03 31.03 0 0 0 .502 5.814 2.994 2.994 0 0 0 2.112 2.115c1.881.526 9.386.526 9.386.526s7.505 0 9.386-.526a2.994 2.994 0 0 0 2.112-2.115A31.03 31.03 0 0 0 24 12a31.03 31.03 0 0 0-.502-5.814ZM9.75 15.568V8.432L15.818 12Z"/></svg>
       </a>
       <a href="https://inara.cz/elite/squadron/534/" class="social-icon inara-icon" target="_blank" rel="noopener" aria-label="Canonn on Inara" title="Inara"></a>
     </ng-template>
@@ -94,6 +97,19 @@ import { ContentService, RecentItem, articleLink } from './services/content.serv
           </div>
         </div>
       </footer>
+
+      <button
+        type="button"
+        class="back-to-top"
+        [class.visible]="showTop"
+        [attr.tabindex]="showTop ? null : -1"
+        [attr.aria-hidden]="showTop ? null : 'true'"
+        aria-label="Back to top"
+        title="Back to top"
+        (click)="scrollToTop()"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"></polyline></svg>
+      </button>
 
       <dialog #reportDialog class="report-dialog" aria-labelledby="report-title" (click)="onDialogClick($event)">
         <h2 id="report-title">Report a problem</h2>
@@ -394,6 +410,43 @@ import { ContentService, RecentItem, articleLink } from './services/content.serv
       flex: 1;
     }
 
+    .back-to-top {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 20;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: rgba(20, 26, 34, 0.92);
+      color: var(--accent-light);
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s, visibility 0.2s, background 0.15s;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+    }
+
+    .back-to-top:hover,
+    .back-to-top:focus-visible {
+      background: var(--accent);
+      color: #0b0e13;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .back-to-top { transition: none; }
+    }
+
     .site-footer {
       border-top: 1px solid var(--border);
       padding: 1.5rem 0;
@@ -414,6 +467,9 @@ export class AppComponent {
   pageTitle = '';
   private pageUrl = '';
 
+  /** The floating "back to top" button appears once the reader has scrolled a screen or so. */
+  showTop = false;
+
   readonly reportOptions = [
     { label: 'Something went wrong', template: 'bug--.md', prefix: 'Bug', detail: 'Something went wrong on this page.' },
     { label: 'This article is inaccurate', template: 'correction--.md', prefix: 'Correction', detail: 'This article is inaccurate.\n\nWhat is wrong, and what should it say?\n' },
@@ -421,6 +477,16 @@ export class AppComponent {
     { label: 'Images are missing', template: 'correction--.md', prefix: 'Correction', detail: 'Images are missing or broken in this article.\n\nWhich images?\n' },
     { label: 'An article is missing', template: 'article-.md', prefix: 'Article', detail: 'I think an article is missing from the site.\n\nWhat do you think is missing? Describe the topic, its old title, or anything else that identifies it.\n\nTip: check the Wayback Machine for the old site before reporting \u2014 visit https://web.archive.org/web/*/https://canonn.science/* (or https://web.archive.org/web/*/https://science.canonn.tech/*), search for the topic, and if you find it, paste the archive.org link here so it can be recovered.\n', includePage: false },
   ];
+
+  @HostListener('window:scroll')
+  onScroll(): void {
+    this.showTop = window.scrollY > 400;
+  }
+
+  scrollToTop(): void {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  }
 
   openReport(): void {
     const h1 = document.querySelector('main h1')?.textContent?.trim();

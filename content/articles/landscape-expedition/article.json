@@ -4,7 +4,8 @@
   "section": "codex",
   "date": "2023-09-06T21:28:28+01:00",
   "modified": null,
-  "excerpt": "",
+  "author": "LCU No Fool Like One",
+  "excerpt": "The Landscape signal is a pre-horizons audio signal that can be heard when pointing in the general direction of Sagittarius A* from the bubble. It gets its name from a distinctive structure visible…",
   "banner": "shared-media/2023/09/landscape_signal2.webp",
   "categories": [
     {
@@ -16,5 +17,8 @@
   ],
   "format": "html",
   "source": "wayback",
-  "original_link": "https://canonn.science/codex/landscape-expedition/"
+  "original_link": "https://canonn.science/codex/landscape-expedition/",
+  "linked": [
+    "the-landscape-signal"
+  ]
 }

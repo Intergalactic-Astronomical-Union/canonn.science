@@ -1,0 +1,20 @@
+{
+  "title": "CMDR Filina – Commander’s Logs",
+  "slug": "cmdr-filina-commanders-logs",
+  "section": "media",
+  "date": "2018-06-19T00:28:50+01:00",
+  "excerpt": "A Commander's personal log of exploring the galaxy alone, from close calls with stars to a message home to say all is well.",
+  "banner": "media/banner.png",
+  "categories": [
+    {
+      "category": "News and Events",
+      "subs": [
+        "Community"
+      ]
+    }
+  ],
+  "format": "html",
+  "source": "wayback",
+  "original_link": "https://canonn.science/lore/cmdr-filina-commanders-logs/",
+  "author": "Filina"
+}
