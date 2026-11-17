@@ -20,6 +20,9 @@
       ]
     }
   ],
+  "linked": [
+    "project-mercury-strategy"
+  ],
   "format": "html",
   "source": "wayback",
   "original_link": "https://canonn.science/lore/project-mercury-a-first-message/"
