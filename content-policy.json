@@ -226,6 +226,9 @@
     "letter-spacing",
     "clear"
   ],
+  "trustedMediaPrefixes": [
+    "https://storage.googleapis.com/canonn_site/"
+  ],
   "externalBannerHosts": [
     "i.ytimg.com"
   ],
