@@ -17,5 +17,8 @@
   ],
   "format": "html",
   "source": "articles.json",
-  "original_link": "https://canonn.science/codex/cartographics/the-landscape-signal/"
+  "original_link": "https://canonn.science/codex/cartographics/the-landscape-signal/",
+  "linked": [
+    "landscape-expedition"
+  ]
 }

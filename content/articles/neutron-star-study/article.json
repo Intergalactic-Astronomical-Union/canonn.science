@@ -17,5 +17,8 @@
   ],
   "format": "html",
   "source": "articles.json",
-  "original_link": "https://canonn.science/codex/neutron-star-study/"
+  "original_link": "https://canonn.science/codex/neutron-star-study/",
+  "linked": [
+    "neutron-stars"
+  ]
 }
