@@ -15,6 +15,9 @@
       ]
     }
   ],
+  "linked": [
+    "project-mercury-strategy"
+  ],
   "format": "html",
   "source": "wayback",
   "original_link": "https://canonn.science/codex/the-unknown-artefact/"
