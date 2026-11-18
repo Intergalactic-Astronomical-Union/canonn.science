@@ -15,6 +15,8 @@ import { ArticleEditorComponent } from '../../components/article-editor.componen
 import { EditModeService } from '../../services/edit-mode';
 import { NotFoundComponent } from '../not-found/not-found.component';
 
+const REVIEW_KEY = 'canonn-review-last';
+
 interface Placement {
   catName: string;
   catLink: string[];
@@ -391,17 +393,37 @@ export class ArticleDetailComponent {
     shareReplay(1),
   );
 
+  private lastReviewed(): string | null {
+    try {
+      return localStorage.getItem(REVIEW_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private rememberReviewed(slug: string): void {
+    try {
+      localStorage.setItem(REVIEW_KEY, slug);
+    } catch {
+      /* storage unavailable (private mode); resuming just won't work */
+    }
+  }
+
   /** Slug from the URL; bare /review resolves to the most recent article. */
   private slug$: Observable<string> = this.route.paramMap.pipe(
     switchMap((params) => {
       const slug = params.get('slug');
       if (slug || !this.reviewMode) {
+        if (slug && this.reviewMode) this.rememberReviewed(slug);
         return of(slug!);
       }
       return this.sorted$.pipe(
         tap((list) => {
           if (list.length) {
-            this.router.navigate(['/review', list[0].slug], { replaceUrl: true });
+            // Resume where the reviewer left off, if that article still exists.
+            const last = this.lastReviewed();
+            const target = list.find((a) => a.slug === last) ?? list[0];
+            this.router.navigate(['/review', target.slug], { replaceUrl: true });
           }
         }),
         switchMap(() => EMPTY),
