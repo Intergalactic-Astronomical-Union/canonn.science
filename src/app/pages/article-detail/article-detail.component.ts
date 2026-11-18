@@ -29,11 +29,22 @@ interface Placement {
   template: `
     <ng-container *ngIf="reviewMode && (review$ | async) as r">
       <div class="review-bar">
+        <a class="btn" *ngIf="r.index > 0; else noFirst" [routerLink]="['/review', r.first.slug]" title="Newest article">&laquo; First</a>
+        <ng-template #noFirst><span class="btn disabled">&laquo; First</span></ng-template>
         <a class="btn" *ngIf="r.prev; else noPrev" [routerLink]="['/review', r.prev.slug]">&larr; Prev</a>
         <ng-template #noPrev><span class="btn disabled">&larr; Prev</span></ng-template>
-        <span class="review-pos">{{ r.index + 1 }} / {{ r.total }}</span>
+        <span class="review-pos">
+          <input #posInput class="review-input" type="number" min="1" [max]="r.total" [value]="r.index + 1"
+            aria-label="Go to article number" (keydown.enter)="goTo(posInput.value)" (focus)="posInput.select()" />
+          / {{ r.total }}
+        </span>
+        <button type="button" class="btn" (click)="goTo(posInput.value)" title="Go to the entered number">Go</button>
         <a class="btn" *ngIf="r.next; else noNext" [routerLink]="['/review', r.next.slug]">Next &rarr;</a>
         <ng-template #noNext><span class="btn disabled">Next &rarr;</span></ng-template>
+        <a class="btn" *ngIf="r.index < r.total - 1; else noLast" [routerLink]="['/review', r.last.slug]" title="Oldest article">Last &raquo;</a>
+        <ng-template #noLast><span class="btn disabled">Last &raquo;</span></ng-template>
+        <button type="button" class="btn" (click)="randomArticle()" title="Jump to a random article">&#x1F500; Random</button>
+        <span class="review-divider" aria-hidden="true"></span>
         <a class="btn bug" [href]="r.bugUrl" target="_blank" rel="noopener">Report bug</a>
       </div>
     </ng-container>
@@ -142,6 +153,34 @@ interface Placement {
     .review-pos {
       color: var(--text-muted);
       font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .review-input {
+      width: 4.5rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.4rem;
+      font-size: 0.85rem;
+      text-align: right;
+    }
+
+    .review-bar button.btn {
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .review-divider {
+      align-self: stretch;
+      width: 1px;
+      background: var(--border);
+      margin: 0 0.75rem;
+    }
+
+    .review-bar {
+      flex-wrap: wrap;
     }
 
     .hero {
@@ -389,9 +428,33 @@ export class ArticleDetailComponent {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
+  /** Latest list the pager walks, kept for the go-to and random buttons. */
+  private reviewList: ArticleSummary[] = [];
+
+  /** Go to article number n (1-based, clamped to the list). */
+  goTo(value: string): void {
+    const n = Math.round(Number(value));
+    if (!this.reviewList.length || !Number.isFinite(n)) return;
+    const target = this.reviewList[Math.min(Math.max(n, 1), this.reviewList.length) - 1];
+    this.router.navigate(['/review', target.slug]);
+  }
+
+  /** Jump to a random article other than the current one. */
+  randomArticle(): void {
+    const list = this.reviewList;
+    if (list.length < 2) return;
+    const current = this.route.snapshot.paramMap.get('slug');
+    let pick: ArticleSummary;
+    do {
+      pick = list[Math.floor(Math.random() * list.length)];
+    } while (pick.slug === current);
+    this.router.navigate(['/review', pick.slug]);
+  }
+
   /** Prev is newer, next is older; plus a prefilled GitHub bug report for the page. */
   review$ = combineLatest([this.slug$, this.sorted$, this.article$]).pipe(
     map(([slug, list, article]) => {
+      this.reviewList = list;
       const index = list.findIndex((a) => a.slug === slug);
       const title = article?.title ?? list[index]?.title ?? slug;
       const pageUrl = article
@@ -409,6 +472,8 @@ export class ArticleDetailComponent {
       return {
         index,
         total: list.length,
+        first: list[0],
+        last: list[list.length - 1],
         prev: index > 0 ? list[index - 1] : null,
         next: index >= 0 && index < list.length - 1 ? list[index + 1] : null,
         bugUrl: `https://github.com/canonn-science/canonn.science/issues/new?${params}`,
