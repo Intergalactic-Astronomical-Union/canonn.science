@@ -32,6 +32,7 @@ class AuditTests(unittest.TestCase):
             }), encoding="utf-8")
             (article / "body.html").write_text(
                 '<img src="media/existing.webp">'
+                '<img src="media/existing.webp 960w">'
                 '<img src="media/not-there.png">'
                 '<img src="/assets/media/2026/06/bank-A.jpeg">'
                 '<a href="https://imgur.com/a/GWQ4w">Source gallery</a>'
@@ -40,10 +41,10 @@ class AuditTests(unittest.TestCase):
             )
             n, rows = audit.audit(repo)
             self.assertEqual(n, 1)
-            self.assertEqual(len(rows), 3)
+            self.assertEqual(len(rows), 4)
             self.assertEqual(
                 {r["classification"] for r in rows},
-                {"missing_local_file", "legacy_media_url_review", "external_imgur_review"}
+                {"missing_local_file", "malformed_src_width_descriptor", "legacy_media_url_review", "external_imgur_review"}
             )
             legacy = next(r for r in rows if r["classification"] == "legacy_media_url_review")
             self.assertEqual(legacy["archive_target"],
