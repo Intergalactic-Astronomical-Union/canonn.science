@@ -15,5 +15,8 @@
   ],
   "format": "html",
   "source": "articles.json",
-  "original_link": "https://canonn.science/codex/get-your-name-in-the-codex/"
+  "original_link": "https://canonn.science/codex/get-your-name-in-the-codex/",
+  "linked": [
+    "spansh"
+  ]
 }
