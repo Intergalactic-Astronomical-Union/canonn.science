@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import re
+import subprocess
 import time
 from collections import Counter
 from html.parser import HTMLParser
@@ -46,9 +47,27 @@ def normalize_name(name):
     return re.sub(r"-(?:\d+x\d+|scaled)$", "", stem)
 
 
+def git_file_index(root):
+    """Get tracked media paths without checking out gigabytes of image blobs.
+
+    This supports actions/checkout with --filter=blob:none and sparse checkout.
+    In a non-git export, return None and inspect the filesystem instead.
+    """
+    try:
+        p = subprocess.run(
+            ["git", "-C", str(root), "ls-tree", "-r", "--name-only",
+             "HEAD", "--", "content/articles", "content/shared-media"],
+            check=True, text=True, capture_output=True,
+        )
+        return set(p.stdout.splitlines())
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 def audit(repo):
     root = repo.resolve()
     content = root / "content"
+    git_files = git_file_index(root)
     articles = content / "articles"
     if not articles.is_dir():
         raise ValueError(f"Missing article directory: {articles}")
@@ -76,7 +95,12 @@ def audit(repo):
             links.append(("article.json", "banner", metadata["banner"]))
         available = {}
         media_dir = folder / "media"
-        if media_dir.is_dir():
+        if git_files is not None:
+            prefix = f"content/articles/{folder.name}/media/"
+            for path in git_files:
+                if path.startswith(prefix):
+                    available.setdefault(normalize_name(Path(path).name), []).append(path)
+        elif media_dir.is_dir():
             for file in media_dir.rglob("*"):
                 if file.is_file():
                     available.setdefault(normalize_name(file.name), []).append(
@@ -102,7 +126,8 @@ def audit(repo):
                 resolved = target.resolve()
                 if not resolved.is_relative_to(content):
                     classification = "unsafe_local_path"
-                elif not resolved.is_file():
+                elif (resolved.relative_to(root).as_posix() not in git_files
+                      if git_files is not None else not resolved.is_file()):
                     classification = "missing_local_file"
             if not classification:
                 continue
