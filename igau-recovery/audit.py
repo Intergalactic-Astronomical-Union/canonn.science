@@ -114,7 +114,15 @@ def audit(repo):
             host = (parsed.hostname or "").lower()
             path = unquote(parsed.path)
             classification, target = "", None
-            if host in ("imgur.com", "www.imgur.com", "i.imgur.com", "m.imgur.com"):
+            # A srcset width descriptor mistakenly included in img.src is not
+            # a missing asset. It is malformed HTML if the URL without that
+            # descriptor points to an existing, tracked article media file.
+            bad_width = (re.fullmatch(r"\s*(media/[^\s]+)\s+\d+w\s*", url)
+                         if attr == "src" else None)
+            if bad_width:
+                classification = "malformed_src_width_descriptor"
+                target = folder / bad_width.group(1)
+            elif host in ("imgur.com", "www.imgur.com", "i.imgur.com", "m.imgur.com"):
                 classification = "external_imgur_review"
             elif path.startswith(("/assets/media/", "/wp-content/uploads/")):
                 classification = "legacy_media_url_review"
@@ -139,7 +147,7 @@ def audit(repo):
             original = ""
             if path.startswith(("/assets/media/", "/wp-content/uploads/")):
                 original = "https://canonn.science" + quote(path, safe="/")
-            name = Path(path).name
+            name = Path(bad_width.group(1) if bad_width else path).name
             rows.append({
                 "slug": folder.name, "title": metadata.get("title", folder.name),
                 "section": metadata.get("section", ""),
@@ -152,7 +160,8 @@ def audit(repo):
                     "q": f'"{name}" "Elite Dangerous"'}) if name else "",
             })
     order = {"missing_local_file": 0, "unsafe_local_path": 0,
-             "legacy_media_url_review": 1, "external_imgur_review": 2}
+             "malformed_src_width_descriptor": 1,
+             "legacy_media_url_review": 2, "external_imgur_review": 3}
     rows.sort(key=lambda r: (order[r["classification"]], r["slug"],
                              r["url"], r["source_file"]))
     return examined, rows
