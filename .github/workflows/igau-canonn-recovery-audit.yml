@@ -1,0 +1,75 @@
+name: IGAU Canonn Recovery Audit
+
+# Inventory only. This workflow never creates issues, changes files, or submits PRs.
+on:
+  workflow_dispatch:
+    inputs:
+      wayback_limit:
+        description: 'Wayback availability probes (0, 12, or 30; research leads only)'
+        required: true
+        default: '12'
+        type: choice
+        options:
+          - '0'
+          - '12'
+          - '30'
+  schedule:
+    # Weekly read-only local audit. No external archive requests on schedule.
+    - cron: '23 9 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: igau-canonn-audit
+  cancel-in-progress: false
+
+jobs:
+  inventory:
+    name: Read-only recovery inventory
+    if: github.repository == 'Intergalactic-Astronomical-Union/canonn.science'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Sparse checkout article text, not multi-GB media blobs
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            igau-recovery/
+            content/articles/*/article.json
+            content/articles/*/body.html
+            content/articles/*/body.md
+
+      - name: Run offline scanner tests
+        run: python3 -m unittest discover -s igau-recovery/tests -v
+
+      - name: Generate evidence inventory
+        env:
+          WAYBACK_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.wayback_limit || '0' }}
+        run: |
+          python3 igau-recovery/audit.py \
+            --repo . \
+            --out recovery-results \
+            --wayback-limit "$WAYBACK_LIMIT" \
+            --delay 4
+
+      - name: Publish summary in workflow run
+        if: always()
+        run: |
+          if [ -f recovery-results/summary.md ]; then
+            cat recovery-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Audit did not produce a report; inspect test or scan logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Attach research CSV and summary (no commits or PRs)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonn-recovery-inventory
+          path: recovery-results/
+          if-no-files-found: error
+          retention-days: 14
