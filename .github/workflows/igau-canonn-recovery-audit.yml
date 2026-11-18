@@ -2,6 +2,9 @@ name: IGAU Canonn Recovery Audit
 
 # Inventory only. This workflow never creates issues, changes files, or submits PRs.
 on:
+  push:
+    branches:
+      - igau/canonn-recovery-audit
   workflow_dispatch:
     inputs:
       wayback_limit:
