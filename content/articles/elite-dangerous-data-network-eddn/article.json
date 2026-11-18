@@ -1,0 +1,13 @@
+{
+  "title": "Elite Dangerous Data Network (EDDN)",
+  "slug": "elite-dangerous-data-network-eddn",
+  "section": "codex",
+  "date": "2026-11-18",
+  "author": "Canonn Research",
+  "excerpt": "EDDN is a live stream of data shared by commanders about the galaxy. Find out why it matters to Canonn, how to contribute your own data, and which tools and archives make use of it.",
+  "banner": "media/banner.png",
+  "categories": [
+    { "category": "Useful Links", "subs": [] }
+  ],
+  "linked": ["spansh"]
+}

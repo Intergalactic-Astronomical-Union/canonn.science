@@ -17,5 +17,9 @@
   ],
   "format": "html",
   "source": "articles.json",
-  "original_link": "https://canonn.science/codex/cartographics/rhubarb-and-custard/"
+  "original_link": "https://canonn.science/codex/cartographics/rhubarb-and-custard/",
+  "linked": [
+    "elite-dangerous-data-network-eddn",
+    "spansh"
+  ]
 }

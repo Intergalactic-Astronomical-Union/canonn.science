@@ -15,5 +15,9 @@
   ],
   "format": "html",
   "source": "articles.json",
-  "original_link": "https://canonn.science/codex/background-lore-index/"
+  "original_link": "https://canonn.science/codex/background-lore-index/",
+  "linked": [
+    "elite-dangerous-data-network-eddn",
+    "spansh"
+  ]
 }

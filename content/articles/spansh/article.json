@@ -1,0 +1,13 @@
+{
+  "title": "Spansh",
+  "slug": "spansh",
+  "section": "codex",
+  "date": "2026-11-18",
+  "author": "Canonn Research",
+  "excerpt": "Spansh is a galaxy-wide database and set of route plotters built from data that commanders send to EDDN. See what it can do, how Canonn uses it and how to support it.",
+  "banner": "media/banner.png",
+  "categories": [
+    { "category": "Useful Links", "subs": [] }
+  ],
+  "linked": ["elite-dangerous-data-network-eddn"]
+}

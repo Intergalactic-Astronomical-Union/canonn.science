@@ -18,5 +18,9 @@
   "format": "html",
   "source": "wayback",
   "original_link": "https://canonn.science/codex/converting-legacy-coordinates-to-xyz/",
-  "scripts": true
+  "scripts": true,
+  "linked": [
+    "elite-dangerous-data-network-eddn",
+    "spansh"
+  ]
 }
