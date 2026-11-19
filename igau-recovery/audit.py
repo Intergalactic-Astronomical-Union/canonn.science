@@ -64,6 +64,25 @@ def git_file_index(root):
         return None
 
 
+def media_candidates(git_files, slug, filename):
+    """Suggestions only. Similar names are NOT evidence of matching content."""
+    if not git_files or not filename:
+        return []
+    wanted = normalize_name(filename)
+    if len(wanted) < 7:
+        return []
+    paths = [path for path in git_files
+             if ("/media/" in path or path.startswith("content/shared-media/"))
+             and normalize_name(Path(path).name) == wanted]
+    preferred = f"content/articles/{slug}/media/"
+    def rank(path):
+        return (0 if path.startswith(preferred) else
+                1 if path.startswith("content/shared-media/") else 2,
+                0 if Path(path).name.casefold() == filename.casefold() else 1,
+                path)
+    return sorted(paths, key=rank)[:3]
+
+
 def audit(repo):
     root = repo.resolve()
     content = root / "content"
@@ -143,7 +162,10 @@ def audit(repo):
             if key in seen:
                 continue
             seen.add(key)
-            possible = sorted(available.get(normalize_name(Path(path).name), []))[:3]
+            possible = media_candidates(git_files, folder.name,
+                                        Path(path).name) if git_files else (
+                                            sorted(available.get(normalize_name(Path(path).name), []))[:3]
+                                        )
             original = ""
             if path.startswith(("/assets/media/", "/wp-content/uploads/")):
                 original = "https://canonn.science" + quote(path, safe="/")
@@ -211,6 +233,8 @@ def save(out, count, rows, probes):
     affected = Counter(r["slug"] for r in rows)
     summary = {"articles_scanned": count, "findings": len(rows),
                "affected_articles": len(affected), "by_classification": groups,
+               "findings_with_existing_local_candidates": sum(
+                   bool(r["possible_local_variant"]) for r in rows),
                "wayback_targets_probed": probes,
                "unverified_wayback_leads": sum(
                    r["wayback_status"] == "unverified_snapshot_lead" for r in rows)}
@@ -224,7 +248,9 @@ def save(out, count, rows, probes):
              f"Wayback targets probed: {probes}.", "",
              "| Classification | References |", "|---|---:|"]
     lines += [f"| {k} | {v} |" for k, v in groups.items()]
-    lines += ["", "## Highest-count articles", "",
+    lines += ["", f"Existing-file candidate paths (not verified): "
+              f"{summary['findings_with_existing_local_candidates']}.",
+              "", "## Highest-count articles", "",
               "| Slug | Findings |", "|---|---:|"]
     lines += [f"| {slug} | {n} |" for slug, n in
               sorted(affected.items(), key=lambda item: (-item[1], item[0]))[:30]]
