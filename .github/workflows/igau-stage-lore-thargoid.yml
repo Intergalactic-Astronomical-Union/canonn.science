@@ -1,0 +1,68 @@
+name: IGAU Stage Verified Historical Lore Image
+
+# One-time IGAU-only recovery task. NEVER submits PRs and cannot run upstream.
+on:
+  push:
+    branches:
+      - igau/canonn-recovery-audit
+    paths:
+      - '.github/workflows/igau-stage-lore-thargoid.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stage-one-image:
+    if: github.repository == 'Intergalactic-Astronomical-Union/canonn.science' && github.actor == 'Astro74205' && contains(github.event.head_commit.message, '[stage-thargoid-photo]')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check out clean single-article recovery branch
+        uses: actions/checkout@v4
+        with:
+          ref: igau/restore-lore-thargoid-site-image
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            content/articles/lore/article.json
+            content/articles/lore/body.html
+            content/articles/lore/media/
+
+      - name: Retrieve and verify EXACT historical image bytes
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+
+          url = ("https://web.archive.org/web/20260929180659id_/"
+                 "https://canonn.science/wp-content/uploads/2017/04/"
+                 "Active_Thargoid_Site-small-1024x576.jpg")
+          expected_sha = "f934d48acc48b349f767e3cffa3a27efe0ca70e9c3500c145ff0406b8a4909a3"
+          dest = Path("content/articles/lore/media/Active_Thargoid_Site-small-1024x576.jpg")
+          dest.parent.mkdir(parents=True, exist_ok=True)
+          if dest.exists():
+              raise SystemExit("Destination unexpectedly exists; refusing overwrite")
+          request = Request(url, headers={"User-Agent": "IGAU-Canonn-archive-recovery/1.0"})
+          with urlopen(request, timeout=55) as response:
+              data = response.read(200000)
+          digest = hashlib.sha256(data).hexdigest()
+          if len(data) != 83309 or digest != expected_sha:
+              raise SystemExit(f"Source bytes changed: size={len(data)}, sha256={digest}")
+          if not data.startswith(b"\xff\xd8\xff") or not data.endswith(b"\xff\xd9"):
+              raise SystemExit("Media is not a complete JPEG")
+          dest.write_bytes(data)
+          print(f"Verified {dest}, {len(data)} bytes, sha256={digest}")
+          PY
+      - name: Commit only the authenticated original JPEG to the IGAU branch
+        run: |
+          set -euo pipefail
+          dest="content/articles/lore/media/Active_Thargoid_Site-small-1024x576.jpg"
+          git add -- "$dest"
+          test "$(git diff --cached --name-only)" = "$dest"
+          git -c user.name='igau-recovery[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Restore original 2017 Lore image from verified Wayback snapshot"
+          git push origin HEAD:igau/restore-lore-thargoid-site-image
