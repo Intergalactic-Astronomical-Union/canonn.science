@@ -51,6 +51,20 @@ class AuditTests(unittest.TestCase):
                              "https://canonn.science/assets/media/2026/06/bank-A.jpeg")
             self.assertTrue(all(r["wayback_status"] == "not_checked" for r in rows))
 
+    def test_historical_derivative_suggestions_are_only_candidates(self):
+        files = {
+            "content/articles/guardian-test/media/ancient_map.webp",
+            "content/shared-media/ancient_map.jpg",
+            "content/articles/other/media/ancient_map.jpeg",
+        }
+        candidates = audit.media_candidates(
+            files, "guardian-test", "ancient_map-300x200.jpg")
+        self.assertEqual(candidates[0],
+                         "content/articles/guardian-test/media/ancient_map.webp")
+        self.assertEqual(len(candidates), 3)
+        self.assertEqual(audit.media_candidates(files, "guardian-test", "x.jpg"), [])
+
+
     def test_path_traversal_is_reported(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp)
