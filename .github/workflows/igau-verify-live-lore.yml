@@ -1,0 +1,67 @@
+name: IGAU Verify Live Lore Images
+
+# One-shot, read-only HTTP verification of URLs referenced by Canonn upstream.
+# This workflow never commits files or submits issues/PRs.
+on:
+  push:
+    branches:
+      - igau/canonn-recovery-audit
+    paths:
+      - '.github/workflows/igau-verify-live-lore.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.repository == 'Intergalactic-Astronomical-Union/canonn.science' && contains(github.event.head_commit.message, '[verify-live-lore]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: GET exact image URLs, verify bytes, and report server responses
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, urllib.request, urllib.error
+          origin = "https://science.canonn.tech"
+          base = "/uploads/2017/04/Active_Thargoid_Site-small-"
+          probes = [
+             ("control_site", origin+"/codex/lore", "html"),
+             ("control_known_webp", origin+"/assets/media/lore/HugoRoss_01_SRVRock.webp", "webp"),
+             ("image_src_300", origin+base+"300x169.jpg", "jpeg"),
+             ("image_srcset_768", origin+base+"768x432.jpg", "jpeg"),
+             ("image_srcset_1024", origin+base+"1024x576.jpg", "jpeg"),
+             ("image_srcset_600", origin+base+"600x338.jpg", "jpeg"),
+             ("original_wordpress_1024", "https://canonn.science/wp-content/uploads/2017/04/Active_Thargoid_Site-small-1024x576.jpg", "jpeg"),
+          ]
+          results=[]
+          for label, url, typ in probes:
+              entry={"label":label,"url":url, "expected":typ}
+              try:
+                  request=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (compatible; IGAU archive verification)","Accept":"*/*"})
+                  with urllib.request.urlopen(request,timeout=16) as response:
+                      data=response.read(1_250_000)
+                      entry.update({"status":response.status,"mimetype":response.headers.get("Content-Type",""),
+                                    "final_url":response.url,"bytes_sampled":len(data),
+                                    "magic_hex":data[:12].hex()})
+                      entry["valid_media"]=(data.startswith(b"\xff\xd8\xff") and data.endswith(b"\xff\xd9")) if typ=="jpeg" else (data.startswith(b"RIFF") and data[8:12]==b"WEBP") if typ=="webp" else None
+                      if entry["valid_media"]:entry["sha256"]=hashlib.sha256(data).hexdigest()
+              except urllib.error.HTTPError as ex:
+                  entry.update({"status":ex.code,"mimetype":ex.headers.get("Content-Type",""),"final_url":ex.url,"valid_media":False})
+              except Exception as ex:
+                  entry.update({"error":type(ex).__name__+": "+str(ex)[:220],"valid_media":False})
+              results.append(entry)
+              print(json.dumps(entry),flush=True)
+          failures=[r for r in results if r["expected"]=="jpeg" and not r.get("valid_media")]
+          print("SUMMARY",json.dumps({"jpg_probes":5,"failed_jpg_probes":len(failures),"control_site_status":results[0].get("status"),"control_webp_valid":results[1].get("valid_media")}),flush=True)
+          with open("live-lore-report.json","w") as f:
+              json.dump(results,f,indent=2)
+          PY
+      - name: Keep read-only evidence summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: igau-live-lore-http-results
+          path: live-lore-report.json
+          retention-days: 14
+          if-no-files-found: warn
