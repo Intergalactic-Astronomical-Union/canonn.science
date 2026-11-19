@@ -19,29 +19,65 @@ from urllib.request import Request, urlopen
 HOST_CDN = "cdn-5f3c0a05c1ac180394b62f3c.closte.com"
 TARGETS = [
     {
-        "key": "drew-elite-thargoid-full",
-        "expected": "png",
-        "filename": "Elite_Thargoid.png",
-        "paths": ["/wp-content/uploads/2017/10/Elite_Thargoid.png"],
-        "hosts": ["canonn.science"],
-        "article": "drewwagar-the-thargoids",
+        "key": "elite-1984-animated-original",
+        "expected": "gif",
+        "filename": "elite1.gif",
+        "paths": [
+            "/wp-content/uploads/2017/10/elite1.gif"
+        ],
+        "hosts": [
+            "canonn.science"
+        ],
+        "article": "drewwagar-history-the-original-elite"
     },
     {
-        "key": "drew-thargoid-refuel-full",
+        "key": "elite-1984-history-screenshot",
         "expected": "png",
-        "filename": "elite-dangerous-thargoid-refuel.png",
-        "paths": ["/wp-content/uploads/2017/10/elite-dangerous-thargoid-refuel.png"],
-        "hosts": ["canonn.science"],
-        "article": "drewwagar-the-thargoids",
+        "filename": "Elite_2_2.png",
+        "paths": [
+            "/wp-content/uploads/2017/10/Elite_2_2.png"
+        ],
+        "hosts": [
+            "canonn.science"
+        ],
+        "article": "drewwagar-history-the-original-elite"
     },
     {
-        "key": "drew-elite-dangerous2-full",
+        "key": "elite-1984-dark-wheel-cover",
         "expected": "jpeg",
-        "filename": "elite-dangerous2-da611.jpg",
-        "paths": ["/wp-content/uploads/2017/10/elite-dangerous2-da611.jpg"],
-        "hosts": ["canonn.science"],
-        "article": "drewwagar-the-thargoids",
+        "filename": "Elite_The_Dark_Wheel_Novella.jpg",
+        "paths": [
+            "/wp-content/uploads/2017/10/Elite_The_Dark_Wheel_Novella.jpg"
+        ],
+        "hosts": [
+            "canonn.science"
+        ],
+        "article": "drewwagar-history-the-original-elite"
     },
+    {
+        "key": "elite-1984-c64-title-screen",
+        "expected": "png",
+        "filename": "131048-elite-commodore-64-screenshot-title-screen.png",
+        "paths": [
+            "/wp-content/uploads/2017/10/131048-elite-commodore-64-screenshot-title-screen.png"
+        ],
+        "hosts": [
+            "canonn.science"
+        ],
+        "article": "drewwagar-history-the-original-elite"
+    },
+    {
+        "key": "elite-1984-orchestral-screenshot",
+        "expected": "jpeg",
+        "filename": "spaceships-move-slowly-and-realistically-through-space-while-classical-music-plays1.jpg",
+        "paths": [
+            "/wp-content/uploads/2017/10/spaceships-move-slowly-and-realistically-through-space-while-classical-music-plays1.jpg"
+        ],
+        "hosts": [
+            "canonn.science"
+        ],
+        "article": "drewwagar-history-the-original-elite"
+    }
 ]
 MAX_ASSET_BYTES = 24 * 1024 * 1024
 REQUEST_DELAY_SECONDS = 3.2
@@ -50,6 +86,8 @@ USER_AGENT = "IGAU-Canonn-archive-research/1.0 (public historical-source verific
 
 
 def media_signature(data: bytes, expected: str) -> bool:
+    if expected == "gif":
+        return data.startswith((b"GIF87a", b"GIF89a")) and data.endswith(b"\x3b")
     if expected == "jpeg":
         return data.startswith(b"\xff\xd8\xff") and data.endswith(b"\xff\xd9")
     if expected == "png":
