@@ -1,0 +1,51 @@
+name: IGAU Original Asset Research
+
+# One-shot, manual-in-spirit provenance research. Runs ONLY on an explicit
+# opt-in commit in the IGAU recovery branch. No writes, issues, or upstream PRs.
+on:
+  push:
+    branches:
+      - igau/canonn-recovery-audit
+    paths:
+      - 'igau-recovery/origin_probe.py'
+      - 'igau-recovery/tests/test_origin_probe.py'
+      - '.github/workflows/igau-original-asset-research.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: igau-canonn-origin-probe
+  cancel-in-progress: false
+
+jobs:
+  origin-probe:
+    if: github.repository == 'Intergalactic-Astronomical-Union/canonn.science' && contains(github.event.head_commit.message, '[origin-probe]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            igau-recovery/
+      - name: Verify media-sniffing and request bounds
+        run: python3 -m unittest discover -s igau-recovery/tests -v
+      - name: Probe original historical URLs and bounded archived snapshots
+        run: python3 igau-recovery/origin_probe.py
+      - name: Show provenance summary
+        if: always()
+        run: |
+          if [ -f origin-research-results/summary.md ]; then
+            cat origin-research-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload authenticated candidates and exact source manifest
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-media-research
+          path: origin-research-results/
+          retention-days: 14
+          if-no-files-found: error
