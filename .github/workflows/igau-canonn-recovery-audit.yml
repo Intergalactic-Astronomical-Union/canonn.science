@@ -51,12 +51,14 @@ jobs:
 
       - name: Generate evidence inventory
         env:
-          WAYBACK_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.wayback_limit || '0' }}
+          WAYBACK_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.wayback_limit || (github.event_name == 'push' && contains(github.event.head_commit.message, '[archive-probe]') && '12') || '0' }}
+          WAYBACK_SLUGS: ${{ github.event_name == 'push' && 'generation-ship-odysseus,guardian-structure' || '' }}
         run: |
           python3 igau-recovery/audit.py \
             --repo . \
             --out recovery-results \
             --wayback-limit "$WAYBACK_LIMIT" \
+            --wayback-slugs "$WAYBACK_SLUGS" \
             --delay 4
 
       - name: Publish summary in workflow run
