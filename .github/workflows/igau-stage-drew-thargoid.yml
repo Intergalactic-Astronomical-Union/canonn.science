@@ -1,0 +1,73 @@
+name: IGAU Stage Verified Drew Thargoid Original
+
+# One-time source-byte restoration, IGAU only. Do not send tooling upstream.
+on:
+  push:
+    branches:
+      - igau/canonn-recovery-audit
+    paths:
+      - '.github/workflows/igau-stage-drew-thargoid.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stage-original-png:
+    if: github.repository == 'Intergalactic-Astronomical-Union/canonn.science' && github.actor == 'Astro74205' && contains(github.event.head_commit.message, '[stage-drew-thargoid]')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout independent Drew Wagar recovery branch
+        uses: actions/checkout@v4
+        with:
+          ref: igau/restore-drew-thargoid-fullsize-image
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            content/articles/drewwagar-the-thargoids/article.json
+            content/articles/drewwagar-the-thargoids/body.html
+            content/articles/drewwagar-the-thargoids/media/
+
+      - name: Fetch and SHA256-verify original 2017 Canonn PNG
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+
+          original_url = "https://canonn.science/wp-content/uploads/2017/10/Elite_Thargoid.png"
+          archive_url = "https://web.archive.org/web/20230518105831id_/" + original_url
+          expected_digest = "667b8d7042c74a15ff53a9aa783319a08ef11505fe14d593914e316ed9d3c158"
+          expected_bytes = 19915
+          target = Path("content/articles/drewwagar-the-thargoids/media/Elite_Thargoid.png")
+          if target.exists():
+              raise SystemExit("Refusing to overwrite an existing target")
+          request = Request(archive_url, headers={"User-Agent": "IGAU-archive-recovery/1.0"})
+          with urlopen(request, timeout=50) as response:
+              data = response.read(50001)
+          sha256 = hashlib.sha256(data).hexdigest()
+          if len(data) != expected_bytes or sha256 != expected_digest:
+              raise SystemExit(f"Unverified original asset: size={len(data)} sha256={sha256}")
+          if data[:8] != b"\x89PNG\r\n\x1a\n":
+              raise SystemExit("Invalid PNG signature")
+          width = int.from_bytes(data[16:20], "big")
+          height = int.from_bytes(data[20:24], "big")
+          if (width, height) != (500, 500):
+              raise SystemExit(f"Unexpected dimensions: {width}x{height}")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(data)
+          print(f"Verified {target}: {len(data)} bytes, {width}x{height}, SHA256={sha256}")
+          PY
+
+      - name: Commit only the authentic 500x500 PNG to IGAU
+        run: |
+          set -euo pipefail
+          dest="content/articles/drewwagar-the-thargoids/media/Elite_Thargoid.png"
+          git add -- "$dest"
+          test "$(git diff --cached --name-only)" = "$dest"
+          git -c user.name='igau-recovery[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Restore original 500x500 Thargoid diagram from Wayback"
+          git push origin HEAD:igau/restore-drew-thargoid-fullsize-image
