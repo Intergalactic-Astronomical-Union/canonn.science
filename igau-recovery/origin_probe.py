@@ -27,7 +27,7 @@ TARGETS = [
         "article": "generation-ship-odysseus",
     },
     {
-        "key": "guardian-robobloster-001-a",
+        "key": "guardian-robolobster-001-a",
         "expected": "jpeg",
         "filename": "ancient_medium_001-A.jpeg",
         "paths": ["/wp-content/uploads/2026/06/ancient_medium_001-A.jpeg"],
