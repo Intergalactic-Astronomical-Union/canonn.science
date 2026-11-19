@@ -1,0 +1,116 @@
+name: IGAU Stage Clean Lore Recovery V2
+
+# One-off, IGAU-only. Fast-forward upstream main before staging exactly
+# one historically recovered binary and one HTML image tag. No upstream PR.
+on:
+  push:
+    branches:
+      - igau/canonn-recovery-audit
+    paths:
+      - '.github/workflows/igau-stage-clean-lore-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stage:
+    if: github.repository == 'Intergalactic-Astronomical-Union/canonn.science' && github.actor == 'Astro74205' && contains(github.event.head_commit.message, '[stage-lore-v2]')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out IGAU main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Fast-forward IGAU main to Canonn current main only
+        run: |
+          set -euo pipefail
+          git remote add upstream https://github.com/canonn-science/canonn.science.git
+          git fetch --no-tags upstream +refs/heads/main:refs/remotes/upstream/main
+          git merge-base --is-ancestor HEAD upstream/main
+          git merge --ff-only upstream/main
+          echo "SYNCED_CANONN_BASE=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          git push origin HEAD:main
+
+      - name: Branch from current Canonn main and extract proven original
+        run: |
+          set -euo pipefail
+          branch="igau/restore-lore-thargoid-site-image-v2"
+          if git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null; then
+            echo "Branch already exists; refusing to overwrite"
+            exit 1
+          fi
+          git switch -c "$branch"
+          git fetch --no-tags origin refs/heads/igau/restore-lore-thargoid-site-image
+          dest="content/articles/lore/media/Active_Thargoid_Site-small-1024x576.jpg"
+          if test -e "$dest"; then
+            echo "Original JPEG is already present in current Canonn tree"
+            exit 1
+          fi
+          mkdir -p "$(dirname "$dest")"
+          git show "FETCH_HEAD:$dest" > "$dest"
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha1, sha256
+          import re
+          media = Path("content/articles/lore/media/Active_Thargoid_Site-small-1024x576.jpg")
+          data = media.read_bytes()
+          digest = sha256(data).hexdigest()
+          expected = "f934d48acc48b349f767e3cffa3a27efe0ca70e9c3500c145ff0406b8a4909a3"
+          git_digest = sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+          if len(data) != 83309 or digest != expected or git_digest != "3286fb1306a3055fe391ca266ed8a72b38cf4e08":
+              raise SystemExit(f"Unverified recovered JPEG: size={len(data)} SHA256={digest} gitblob={git_digest}")
+          if not (data.startswith(b"\xff\xd8\xff") and data.endswith(b"\xff\xd9")):
+              raise SystemExit("JPEG signature or EOF invalid")
+          body = Path("content/articles/lore/body.html")
+          original = body.read_text(encoding="utf-8")
+          regex = re.compile(r'<img\b[^>]*\bsrc="/uploads/2017/04/Active_Thargoid_Site-small-300x169\.jpg"[^>]*>', re.I)
+          tags = list(regex.finditer(original))
+          if len(tags) != 1:
+              raise SystemExit(f"Expected exactly one target img; got {len(tags)}")
+          old = tags[0].group()
+          if old.count("Active_Thargoid_Site-small-") != 5:
+              raise SystemExit("Unexpected responsive source set; stop rather than alter unknown content")
+          required = [
+              "Active_Thargoid_Site-small-300x169.jpg",
+              "Active_Thargoid_Site-small-600x338.jpg",
+              "Active_Thargoid_Site-small-768x432.jpg",
+              "Active_Thargoid_Site-small-1024x576.jpg",
+          ]
+          if any(name not in old for name in required):
+              raise SystemExit("Existing img no longer matches the 4 known broken URLs")
+          new = old.replace('src="/uploads/2017/04/Active_Thargoid_Site-small-300x169.jpg"',
+                            'src="media/Active_Thargoid_Site-small-1024x576.jpg"')
+          new = re.sub(r'\s+srcset="[^"]*"', "", new)
+          new = re.sub(r'\s+sizes="[^"]*"', "", new)
+          if "srcset=" in new or new.count("Active_Thargoid_Site-small") != 1:
+              raise SystemExit("Replacement failed validation")
+          updated = original[:tags[0].start()] + new + original[tags[0].end():]
+          body.write_text(updated, encoding="utf-8")
+          print(f"Restored SHA256-validated original JPEG, {len(data)} bytes")
+          print(f"Changed precisely one image tag: {old} => {new}")
+          PY
+
+      - name: Verify exactly two relevant files, then push independent branch
+        run: |
+          set -euo pipefail
+          expected="$(printf '%s\n' \
+            content/articles/lore/body.html \
+            content/articles/lore/media/Active_Thargoid_Site-small-1024x576.jpg)"
+          git add -- content/articles/lore/body.html content/articles/lore/media/Active_Thargoid_Site-small-1024x576.jpg
+          actual="$(git diff --cached --name-only)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected files staged: $actual"
+            exit 1
+          fi
+          git -c user.name='igau-recovery[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Restore archived Thargoid site photograph to Lore timeline"
+          git push origin HEAD:refs/heads/igau/restore-lore-thargoid-site-image-v2
+          echo "Branch based on Canonn commit $SYNCED_CANONN_BASE" >> "$GITHUB_STEP_SUMMARY"
+          echo "Exactly one original JPEG and one HTML image tag restored." >> "$GITHUB_STEP_SUMMARY"
