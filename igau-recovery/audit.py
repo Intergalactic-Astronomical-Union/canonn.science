@@ -167,10 +167,12 @@ def audit(repo):
     return examined, rows
 
 
-def wayback(rows, limit, delay):
+def wayback(rows, limit, delay, focus=None):
     checked, probes = {}, 0
     for row in rows:
         target = row["archive_target"]
+        if focus and row["slug"] not in focus:
+            continue
         if not target:
             continue
         if target in checked:
@@ -237,11 +239,13 @@ def main():
     parser.add_argument("--out", type=Path, default=Path("recovery-results"))
     parser.add_argument("--wayback-limit", type=int, default=0)
     parser.add_argument("--delay", type=float, default=4)
+    parser.add_argument("--wayback-slugs", default="", help="Comma-separated article slugs to probe")
     args = parser.parse_args()
     if args.wayback_limit < 0 or args.delay < 3:
         parser.error("wayback-limit must be >= 0 and delay at least 3 seconds")
     count, rows = audit(args.repo)
-    probes = wayback(rows, args.wayback_limit, args.delay) if args.wayback_limit else 0
+    focus = set(filter(None, (s.strip() for s in args.wayback_slugs.split(","))))
+    probes = wayback(rows, args.wayback_limit, args.delay, focus) if args.wayback_limit else 0
     print(json.dumps(save(args.out, count, rows, probes), indent=2))
 
 
